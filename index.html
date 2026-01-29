@@ -361,6 +361,15 @@ p b{font-weight:600;}
   Powered by <span style="color:var(--tech-blue);font-weight:700;font-size:1em;" onclick="window.open('https://techwebnology.github.io/techWEBnology/','_blank')">techwebnology</span>
 </div>
 
+// 🔐 Device ID (one per browser)
+let deviceId = localStorage.getItem('farewell_device_id');
+
+if (!deviceId) {
+  deviceId = 'dev_' + crypto.randomUUID();
+  localStorage.setItem('farewell_device_id', deviceId);
+}
+
+
 <script>
 const cards = document.querySelectorAll('.card');
 const prevBtn = document.getElementById('prevBtn');
@@ -392,11 +401,18 @@ function generateSessionId() {
 }
 
 async function savePoll(quizNum, optionText) {
+  // ❌ Already voted check (extra safety)
+  if (localStorage.getItem('voted_quiz_' + quizNum)) {
+    alert('You have already voted 🙂');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('quiz', quizNum);
   formData.append('option', optionText);
   formData.append('session_id', generateSessionId());
-  
+  formData.append('device_id', deviceId); // 🔥 anti-cheat key
+
   try {
     await fetch(WEBHOOK_URL, {
       method: 'POST',
@@ -404,11 +420,16 @@ async function savePoll(quizNum, optionText) {
       mode: 'no-cors'
     });
 
-    console.log('✅ Vote saved!');
-  } catch (error) {
-    console.log('❌ Offline');
+    // ✅ Lock vote locally
+    localStorage.setItem('voted_quiz_' + quizNum, 'yes');
+
+    console.log('✅ Vote sent (device locked)');
+
+  } catch (e) {
+    console.log('❌ Vote failed');
   }
 }
+
 
 function startShow() {
   startScreen.style.display = 'none';
