@@ -392,25 +392,19 @@ function generateSessionId() {
 }
 
 async function savePoll(quizNum, optionText) {
-  console.log('🗳️ Saving vote:', quizNum, optionText);
-  
-  // FREE CORS proxy (works instantly)
-  const proxyUrl = 'https://api.allorigins.win/raw?url=';
-  const targetUrl = encodeURIComponent(WEBHOOK_URL);
+  const formData = new FormData();
+  formData.append('quiz', quizNum);
+  formData.append('option', optionText);
+  formData.append('session_id', generateSessionId());
   
   try {
-    const response = await fetch(proxyUrl + targetUrl, {
+    await fetch(WEBHOOK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quiz: quizNum,
-        option: optionText,
-        session_id: generateSessionId()
-      })
+      body: formData  // No CORS issues with FormData!
     });
-    console.log('✅ Vote saved via proxy!');
+    console.log('✅ Vote saved!');
   } catch (error) {
-    console.log('❌ Still offline');
+    console.log('❌ Offline');
   }
 }
 
