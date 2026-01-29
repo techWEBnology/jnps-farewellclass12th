@@ -361,13 +361,6 @@ p b{font-weight:600;}
   Powered by <span style="color:var(--tech-blue);font-weight:700;font-size:1em;" onclick="window.open('https://techwebnology.github.io/techWEBnology/','_blank')">techwebnology</span>
 </div>
 
-// 🔐 Device ID (one per browser)
-let deviceId = localStorage.getItem('farewell_device_id');
-
-if (!deviceId) {
-  deviceId = 'dev_' + crypto.randomUUID();
-  localStorage.setItem('farewell_device_id', deviceId);
-}
 
 
 <script>
@@ -383,6 +376,15 @@ let current = 0;
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyObokT-4G6ukYM7Uon3oc0GojjrF5YXMmvbO1MR05CXgM27k8iWByX0zNK8-M3Ar4P/exec';
 
 let sessionId = '';
+
+// 🔐 Device ID (one per browser)
+let deviceId = localStorage.getItem('farewell_device_id');
+
+if (!deviceId) {
+  deviceId = 'dev_' + crypto.randomUUID();
+  localStorage.setItem('farewell_device_id', deviceId);
+}
+
 
 // Emojis
 setInterval(() => {
