@@ -362,85 +362,103 @@ p b{font-weight:600;}
 </div>
 
 <script>
-const cards=document.querySelectorAll('.card');
-const prevBtn=document.getElementById('prevBtn');
-const nextBtn=document.getElementById('nextBtn');
-const music=document.getElementById('bgm');
-const startScreen=document.getElementById('startScreen');
-const mainContainer=document.getElementById('mainContainer');
-let current=0;
+const cards = document.querySelectorAll('.card');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const music = document.getElementById('bgm');
+const startScreen = document.getElementById('startScreen');
+const mainContainer = document.getElementById('mainContainer');
+let current = 0;
 
-// UPDATE THIS URL AFTER RE-DEPLOYING APPS SCRIPT
+// YOUR NEW WEB APP URL HERE (the /exec one)
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyObokT-4G6ukYM7Uon3oc0GojjrF5YXMmvbO1MR05CXgM27k8iWByX0zNK8-M3Ar4P/exec';
 
-setInterval(()=>{
-  const e=document.createElement('div');
-  e.className='emoji';
-  e.innerText=['🎓','✨','💙','🎉','📚','🎈','🌟','🎵','❤️'][Math.floor(Math.random()*9)];
-  e.style.left=Math.random()*100+'vw';
-  e.style.animationDuration=(10+Math.random()*5)+'s';
+let sessionId = '';
+
+// Emojis
+setInterval(() => {
+  const e = document.createElement('div');
+  e.className = 'emoji';
+  e.innerText = ['🎓','✨','💙','🎉','📚','🎈','🌟','🎵','❤️'][Math.floor(Math.random()*9)];
+  e.style.left = Math.random()*100+'vw';
+  e.style.animationDuration = (10+Math.random()*5)+'s';
   document.getElementById('emoji-container').appendChild(e);
   setTimeout(()=>e.remove(),15000);
-},500);
+}, 500);
 
 function generateSessionId() {
-  return 'farewell_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  if (!sessionId) sessionId = 'farewell_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  return sessionId;
 }
 
-async function savePoll(quizNum, optionText, sessionId) {
+async function savePoll(quizNum, optionText) {
+  console.log('🗳️ Saving vote:', quizNum, optionText);
+  if (WEBHOOK_URL.includes('YOUR-NEW')) {
+    console.log('⚠️ Update your webhook URL first!');
+    return;
+  }
   try {
-    if (WEBHOOK_URL && WEBHOOK_URL !== '') {
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quiz: quizNum,
-          option: optionText,
-          session_id: sessionId
-        })
-      });
-      console.log('Vote saved:', await response.text());
-    } else {
-      console.log('🗳️ LOCAL VOTE: Quiz', quizNum, '-', optionText);
-    }
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quiz: quizNum,
+        option: optionText,
+        session_id: generateSessionId()
+      })
+    });
+    console.log('✅ Vote saved:', await response.text());
   } catch (error) {
-    console.log('Offline/Local vote recorded:', quizNum, optionText);
+    console.log('❌ Offline - vote logged locally');
   }
 }
 
-function startShow(){
-  startScreen.style.display='none';
+function startShow() {
+  startScreen.style.display = 'none';
   mainContainer.classList.add('active');
-  document.body.scrollTo({top:0,behavior:'smooth'});
+  document.body.scrollTo({top: 0, behavior: 'smooth'});
   if (music) {
     music.volume = 0.3;
-    music.play().catch(e => console.log('Audio autoplay blocked'));
+    music.play().catch(e => console.log('Audio blocked'));
   }
   showCard(0);
 }
 
-function showCard(i){
-  cards.forEach((c)=>c.classList.remove('active','slide-in-left','slide-in-right'));
+function showCard(i) {
+  cards.forEach(c => c.classList.remove('active', 'slide-in-left', 'slide-in-right'));
   cards[i].classList.add('active');
-  if(i > current) cards[i].classList.add('slide-in-right');
-  else if(i < current) cards[i].classList.add('slide-in-left');
+  if (i > current) cards[i].classList.add('slide-in-right');
+  else if (i < current) cards[i].classList.add('slide-in-left');
   current = i;
-  prevBtn.classList.toggle('show',i>0);
-  nextBtn.classList.toggle('show',i<cards.length-1);
-  if(cards[i].classList.contains('quiz')) nextBtn.classList.remove('show');
-  cards[i].scrollIntoView({behavior:'smooth',block:'center'});
+  prevBtn.classList.toggle('show', i > 0);
+  nextBtn.classList.toggle('show', i < cards.length - 1);
+  if (cards[i].classList.contains('quiz')) nextBtn.classList.remove('show');
+  cards[i].scrollIntoView({behavior: 'smooth', block: 'center'});
 }
 
-function nextCard(){if(current<cards.length-1){current++;showCard(current);}}
-function prevCard(){if(current>0){current--;showCard(current);}}
+function nextCard() { if (current < cards.length - 1) { current++; showCard(current); } }
+function prevCard() { if (current > 0) { current--; showCard(current); } }
+
+// 🔥 FIXED CLICK HANDLER - NO ONCLICK NEEDED
+function initQuizzes() {
+  document.querySelectorAll('.options button').forEach(btn => {
+    btn.onclick = null; // Remove old onclick
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      selectOption(this);
+    });
+  });
+}
 
 function selectOption(btn) {
+  console.log('🎯 CLICKED:', btn.textContent);
+  
   const options = btn.parentElement.querySelectorAll('button');
   const quizCard = btn.closest('.card');
   const isRiddle = quizCard.classList.contains('riddle');
   const quizNum = quizCard.dataset.quiz;
-  const sessionId = generateSessionId();
   
+  // Disable all buttons
   options.forEach(b => {
     b.style.cursor = 'default';
     b.disabled = true;
@@ -449,29 +467,36 @@ function selectOption(btn) {
   const isCorrect = btn.dataset.correct === 'true';
   
   if (isRiddle) {
+    // Riddle logic
     if (isCorrect) {
       btn.classList.add('correct', 'riddle');
-      console.log('✅ CORRECT! School bell');
+      console.log('✅ CORRECT!');
     } else {
       btn.classList.add('wrong', 'riddle');
-      console.log('❌ Wrong answer');
+      console.log('❌ WRONG');
       setTimeout(() => {
         options.forEach(opt => {
-          if (opt.dataset.correct === 'true') {
-            opt.classList.add('correct', 'riddle');
-          }
+          if (opt.dataset.correct === 'true') opt.classList.add('correct', 'riddle');
         });
       }, 1000);
     }
   } else {
+    // Poll logic
     btn.classList.add('selected', 'poll');
-    savePoll(quizNum, btn.dataset.option, sessionId);
-    console.log('📊 Poll vote:', btn.dataset.option);
+    savePoll(quizNum, btn.dataset.option);
+    console.log('📊 POLL:', btn.dataset.option);
   }
   
-  setTimeout(()=>nextBtn.classList.add('show'),300);
+  setTimeout(() => nextBtn.classList.add('show'), 300);
 }
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Page loaded!');
+  initQuizzes();
+});
 </script>
+
 
 </body>
 </html>
